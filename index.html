@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en" data-theme="purple">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07090f">
+  <meta name="application-name" content="Atom BitZ Keno Reactor">
+  <meta name="apple-mobile-web-app-title" content="Atom BitZ Keno">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Atom BitZ Keno Reactor</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon-192.png">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-panel" aria-label="Atom BitZ Keno Reactor">
+      <img id="themeHero" class="hero-banner" src="./assets/atom-bitz-header.png" alt="Atom BitZ">
+      <div class="status-ribbon">
+        <span>Free-play prototype</span>
+        <span>AB App Coins</span>
+        <span>No cash value</span>
+        <span>$0 demo checkout</span>
+        <span>Browser saved</span>
+      </div>
+      <div class="theme-strip" aria-label="Keno card selector">
+        <button type="button" class="theme-choice card-tab active" data-card-tab="0" aria-label="Edit Card 1">
+          <img src="./assets/theme-red-button.png" alt="">
+          <span>Card 1</span>
+        </button>
+        <button type="button" class="theme-choice card-tab" data-card-tab="1" aria-label="Edit Card 2">
+          <img src="./assets/theme-yellow-button.png" alt="">
+          <span>Card 2</span>
+        </button>
+        <button type="button" class="theme-choice card-tab" data-card-tab="2" aria-label="Edit Card 3">
+          <img src="./assets/theme-green-button.png" alt="">
+          <span>Card 3</span>
+        </button>
+        <button type="button" class="theme-choice card-tab" data-card-tab="3" aria-label="Edit Card 4">
+          <img src="./assets/theme-pink-button.png" alt="">
+          <span>Card 4</span>
+        </button>
+        <button type="button" class="theme-choice card-tab view-all-tab" data-card-tab="all" aria-label="View all cards">
+          <img src="./assets/theme-purple-button.png" alt="">
+          <span>View All</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="control-band" aria-label="Game controls">
+      <div class="meter-block">
+        <span class="label">AB App Coins</span>
+        <strong id="credits">2500</strong>
+      </div>
+      <div class="meter-block">
+        <span class="label">Last Result</span>
+        <strong id="lastResult">Ready</strong>
+      </div>
+      <div class="meter-block">
+        <span class="label">Session Peak</span>
+        <strong id="peakCredits">2500</strong>
+      </div>
+      <div class="wager-control">
+        <label for="wager">Wager</label>
+        <input id="wager" type="number" min="1" max="250" step="1" value="10">
+        <div class="step-row" aria-label="Quick wager choices">
+          <button class="mini-action" type="button" data-wager="5">5</button>
+          <button class="mini-action" type="button" data-wager="10">10</button>
+          <button class="mini-action" type="button" data-wager="25">25</button>
+          <button class="mini-action" type="button" data-wager="100">100</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="checkout-panel" aria-label="Free AB App Coin checkout">
+      <div class="checkout-copy">
+        <span class="label">AB App Coin Checkout</span>
+        <strong>Cart flow active. Charge stays $0.00.</strong>
+        <p>Offchain app coins only: no purchase, no payment method, no cash value, no prizes, no withdrawals.</p>
+      </div>
+      <div class="coin-pack-grid" aria-label="AB App Coin packages">
+        <button type="button" class="coin-pack active" data-coin-pack="1000">
+          <span>Starter Pack</span>
+          <strong>1,000</strong>
+          <small>$0.00</small>
+        </button>
+        <button type="button" class="coin-pack" data-coin-pack="5000">
+          <span>Reactor Pack</span>
+          <strong>5,000</strong>
+          <small>$0.00</small>
+        </button>
+        <button type="button" class="coin-pack" data-coin-pack="25000">
+          <span>Vault Pack</span>
+          <strong>25,000</strong>
+          <small>$0.00</small>
+        </button>
+      </div>
+      <div class="cart-box">
+        <span class="label">Cart</span>
+        <strong id="cartCoins">1,000 AB App Coins</strong>
+        <span id="cartTotal">$0.00 AB App Coins / $0.00 support</span>
+        <div class="donation-row" aria-label="Optional support pledge">
+          <span>Optional support</span>
+          <div class="donation-buttons">
+            <button type="button" class="donation-choice active" data-donation="0">$0</button>
+            <button type="button" class="donation-choice" data-donation="1">$1</button>
+            <button type="button" class="donation-choice" data-donation="5">$5</button>
+            <button type="button" class="donation-choice" data-donation="10">$10</button>
+          </div>
+        </div>
+        <button type="button" id="checkoutCoins" class="primary">Complete Free Checkout</button>
+      </div>
+      <div class="receipt-box" aria-live="polite">
+        <span class="label">Receipt</span>
+        <strong id="receiptTitle">No checkout yet</strong>
+        <span id="receiptDetail">Pick a pack and complete the free cart.</span>
+      </div>
+    </section>
+
+    <section class="game-layout">
+      <section class="board-zone" aria-label="Keno number board">
+        <div class="toolbar">
+          <div>
+            <span class="label">Pick 1-10 Numbers</span>
+            <strong id="pickCount">0 selected</strong>
+            <span id="activeCardLabel" class="active-card-label">Card 1</span>
+          </div>
+          <div class="tool-actions">
+            <button type="button" id="quickPick">Quick Pick</button>
+            <button type="button" id="clearPicks">Clear</button>
+            <button type="button" id="playRound" class="primary">Draw</button>
+          </div>
+        </div>
+        <div id="numberBoard" class="number-board" aria-live="polite"></div>
+      </section>
+
+      <aside class="side-panel" aria-label="Round details">
+        <section class="panel-section draw-panel">
+          <div class="section-title">
+            <span class="label">Reactor Draw</span>
+            <strong id="drawSummary">Awaiting draw</strong>
+          </div>
+          <div class="smash-stage" aria-hidden="true">
+            <img id="smashLogo" src="./assets/atom-hit-flame-badge.png" alt="">
+          </div>
+          <div id="drawNumbers" class="draw-numbers"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span class="label">Payout Map</span>
+            <strong id="paytableTitle">Pick numbers</strong>
+          </div>
+          <div class="payout-legend">
+            <img class="flame-legend-icon" src="./assets/flame-mini-red.png" alt="">
+            <span>Flame multipliers</span>
+          </div>
+          <div id="paytable" class="paytable"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span class="label">Pulse</span>
+            <strong id="missionText">Hit 3+ to charge the core</strong>
+          </div>
+          <div class="pulse-grid">
+            <div>
+              <span class="stat-label"><img src="./assets/orbit-electron-icon.png" alt="">Rounds</span>
+              <strong id="rounds">0</strong>
+            </div>
+            <div class="best-hit-stat">
+              <span class="stat-label"><img src="./assets/orbit-electron-icon.png" alt="">Best Hit</span>
+              <strong id="bestHit">0</strong>
+            </div>
+            <div>
+              <span class="stat-label"><img src="./assets/orbit-electron-icon.png" alt="">Biggest Win</span>
+              <strong id="biggestWin">0</strong>
+            </div>
+            <div class="core-charge-stat">
+              <span>Core Charge</span>
+              <strong id="coreCharge">0%</strong>
+              <span class="core-meter" aria-hidden="true"><span id="coreMeterFill"></span></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span class="label">Recent Rounds</span>
+            <button type="button" id="resetGame" class="danger">Reset</button>
+          </div>
+          <ol id="history" class="history-list"></ol>
+        </section>
+      </aside>
+    </section>
+    <footer class="brand-footer">
+      <img src="./assets/ab-micro-icon.png" alt="">
+      <span>A to Z Technology / Atom BitZ Reactor Lab</span>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
