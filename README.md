@@ -10,6 +10,7 @@ It uses offchain AB App Coins as local demo points only. AB App Coins have no ca
 - View All mode that overlays each card's color marker on the board.
 - Browser-local verifiable session proofs with deterministic replay.
 - Pick 1-10 numbers per card, quick pick, clear, and draw flow.
+- Shared denomination controls for 1, 5, 25, 50, and 100, with each card carrying its own 1-10 credit bet count.
 - Free 0.00 demo coin checkout flow.
 - Optional local support pledge workflow with no payment processing.
 - Theme artwork generated from one clean Atom BitZ source image.

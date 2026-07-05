@@ -24,28 +24,6 @@
         <span>$0 demo checkout</span>
         <span>Browser saved</span>
       </div>
-      <div class="theme-strip" aria-label="Keno card selector">
-        <button type="button" class="theme-choice card-tab active" data-card-tab="0" aria-label="Edit Card 1">
-          <img src="./assets/theme-red-button.png" alt="">
-          <span>Card 1</span>
-        </button>
-        <button type="button" class="theme-choice card-tab" data-card-tab="1" aria-label="Edit Card 2">
-          <img src="./assets/theme-yellow-button.png" alt="">
-          <span>Card 2</span>
-        </button>
-        <button type="button" class="theme-choice card-tab" data-card-tab="2" aria-label="Edit Card 3">
-          <img src="./assets/theme-green-button.png" alt="">
-          <span>Card 3</span>
-        </button>
-        <button type="button" class="theme-choice card-tab" data-card-tab="3" aria-label="Edit Card 4">
-          <img src="./assets/theme-pink-button.png" alt="">
-          <span>Card 4</span>
-        </button>
-        <button type="button" class="theme-choice card-tab view-all-tab" data-card-tab="all" aria-label="View all cards">
-          <img src="./assets/theme-purple-button.png" alt="">
-          <span>View All</span>
-        </button>
-      </div>
     </section>
 
     <section class="control-band" aria-label="Game controls">
@@ -62,14 +40,16 @@
         <strong id="peakCredits">2500</strong>
       </div>
       <div class="wager-control">
-        <label for="wager">Wager</label>
-        <input id="wager" type="number" min="1" max="250" step="1" value="10">
-        <div class="step-row" aria-label="Quick wager choices">
-          <button class="mini-action" type="button" data-wager="5">5</button>
-          <button class="mini-action" type="button" data-wager="10">10</button>
-          <button class="mini-action" type="button" data-wager="25">25</button>
-          <button class="mini-action" type="button" data-wager="100">100</button>
+        <span class="label">Denomination</span>
+        <strong id="denominationValue">1</strong>
+        <div class="step-row" aria-label="Denomination choices">
+          <button class="mini-action active" type="button" data-denomination="1">1</button>
+          <button class="mini-action" type="button" data-denomination="5">5</button>
+          <button class="mini-action" type="button" data-denomination="25">25</button>
+          <button class="mini-action" type="button" data-denomination="50">50</button>
+          <button class="mini-action" type="button" data-denomination="100">100</button>
         </div>
+        <small id="cardCreditSummary" class="card-credit-summary">Card A: 1 credit</small>
       </div>
     </section>
 
@@ -121,15 +101,20 @@
     <section class="game-layout">
       <section class="board-zone" aria-label="Keno number board">
         <div class="toolbar">
-          <div>
+          <div class="board-title">
             <span class="label">Pick 1-10 Numbers</span>
             <strong id="pickCount">0 selected</strong>
             <span id="activeCardLabel" class="active-card-label">Card 1</span>
           </div>
-          <div class="tool-actions">
-            <button type="button" id="quickPick">Quick Pick</button>
-            <button type="button" id="clearPicks">Clear</button>
-            <button type="button" id="playRound" class="primary">Draw</button>
+          <div class="card-switcher" aria-label="Keno card selector">
+            <span class="label">Select all cards</span>
+            <div class="card-tab-row">
+              <button type="button" class="card-chip view-all-tab" data-card-tab="all" aria-label="View all cards">All</button>
+              <button type="button" class="card-chip active" data-card-tab="0" aria-label="Edit Card A"><span class="card-dot card-dot-1"></span>A</button>
+              <button type="button" class="card-chip" data-card-tab="1" aria-label="Edit Card B"><span class="card-dot card-dot-2"></span>B</button>
+              <button type="button" class="card-chip" data-card-tab="2" aria-label="Edit Card C"><span class="card-dot card-dot-3"></span>C</button>
+              <button type="button" class="card-chip" data-card-tab="3" aria-label="Edit Card D"><span class="card-dot card-dot-4"></span>D</button>
+            </div>
           </div>
         </div>
         <div id="numberBoard" class="number-board" aria-live="polite"></div>
@@ -216,6 +201,17 @@
           <ol id="history" class="history-list"></ol>
         </section>
       </aside>
+    </section>
+    <section class="play-dock" aria-label="Keno play controls">
+      <div class="bet-actions">
+        <button type="button" id="betOne" class="mini-action">Bet 1</button>
+        <button type="button" id="betMax" class="mini-action">Bet Max</button>
+      </div>
+      <div class="play-actions">
+        <button type="button" id="quickPick">Quick Pick</button>
+        <button type="button" id="clearPicks">Clear</button>
+        <button type="button" id="playRound" class="primary">Draw</button>
+      </div>
     </section>
     <footer class="brand-footer">
       <img src="./assets/ab-micro-icon.png" alt="">

@@ -4,10 +4,13 @@ const peakCreditsEl = document.getElementById("peakCredits");
 const lastResultEl = document.getElementById("lastResult");
 const pickCountEl = document.getElementById("pickCount");
 const activeCardLabelEl = document.getElementById("activeCardLabel");
-const wagerEl = document.getElementById("wager");
+const denominationValueEl = document.getElementById("denominationValue");
+const cardCreditSummaryEl = document.getElementById("cardCreditSummary");
 const quickPickBtn = document.getElementById("quickPick");
 const clearPicksBtn = document.getElementById("clearPicks");
 const playRoundBtn = document.getElementById("playRound");
+const betOneBtn = document.getElementById("betOne");
+const betMaxBtn = document.getElementById("betMax");
 const resetGameBtn = document.getElementById("resetGame");
 const drawNumbersEl = document.getElementById("drawNumbers");
 const drawSummaryEl = document.getElementById("drawSummary");
@@ -32,6 +35,7 @@ const cartTotalEl = document.getElementById("cartTotal");
 const receiptTitleEl = document.getElementById("receiptTitle");
 const receiptDetailEl = document.getElementById("receiptDetail");
 const donationChoiceEls = document.querySelectorAll("[data-donation]");
+const denominationEls = document.querySelectorAll("[data-denomination]");
 const proofStatusEl = document.getElementById("proofStatus");
 const proofSeedEl = document.getElementById("proofSeed");
 const proofHashEl = document.getElementById("proofHash");
@@ -45,9 +49,13 @@ const PROOF_VERSION = "atom-bitz-keno-proof-v1";
 const STARTING_CREDITS = 2500;
 const MAX_PICKS = 10;
 const DRAW_COUNT = 20;
+const DENOMINATIONS = [1, 5, 25, 50, 100];
+const DEFAULT_DENOMINATION = 1;
+const MAX_CARD_CREDITS = 10;
 const FREE_COIN_PACKS = [1000, 5000, 25000];
 const DONATION_PRESETS = [0, 1, 5, 10];
 const CARD_THEMES = ["red", "yellow", "green", "pink"];
+const CARD_LABELS = ["A", "B", "C", "D"];
 const VIEW_ALL_THEME = "purple";
 var themeMode = CARD_THEMES[0];
 var selectedCoinPack = FREE_COIN_PACKS[0];
@@ -114,6 +122,8 @@ function loadState() {
         biggestWin: Math.max(0, Math.floor(saved.biggestWin || 0)),
         coreCharge: Math.max(0, Math.min(100, Math.floor(saved.coreCharge || 0))),
         cards,
+        cardCredits: normalizeCardCredits(saved.cardCredits),
+        denomination: DENOMINATIONS.includes(saved.denomination) ? saved.denomination : DEFAULT_DENOMINATION,
         history: Array.isArray(saved.history) ? saved.history.slice(0, 8) : [],
         receipts: Array.isArray(saved.receipts) ? saved.receipts.slice(0, 5) : [],
         proofSeed: typeof saved.proofSeed === "string" && saved.proofSeed ? saved.proofSeed : createLocalProofSeed(),
@@ -132,6 +142,8 @@ function loadState() {
     biggestWin: 0,
     coreCharge: 0,
     cards: [[], [], [], []],
+    cardCredits: [1, 1, 1, 1],
+    denomination: DEFAULT_DENOMINATION,
     history: [],
     receipts: [],
     proofSeed: createLocalProofSeed(),
@@ -144,6 +156,8 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     ...state,
     cards: cardSelections.map((card) => [...card].sort((a, b) => a - b)),
+    cardCredits: normalizeCardCredits(state.cardCredits),
+    denomination: DENOMINATIONS.includes(state.denomination) ? state.denomination : DEFAULT_DENOMINATION,
   }));
 }
 
@@ -162,6 +176,13 @@ function applyTheme(nextTheme) {
 
 function isBoardNumber(value) {
   return Number.isInteger(value) && value >= 1 && value <= 80;
+}
+
+function normalizeCardCredits(value) {
+  return Array.from({ length: 4 }, (_, index) => {
+    const credits = Array.isArray(value) ? Math.floor(Number(value[index])) : 1;
+    return Math.max(1, Math.min(MAX_CARD_CREDITS, Number.isFinite(credits) ? credits : 1));
+  });
 }
 
 function createLocalProofSeed() {
@@ -248,7 +269,7 @@ async function hashProof(proof) {
   return sha256Hex(canonicalJson(proofPayloadWithoutHash(proof)));
 }
 
-async function buildRoundProof({ proofRound, playedCards, wager, draw, summaries, totalWin, totalWager }) {
+async function buildRoundProof({ proofRound, playedCards, draw, summaries, totalWin, totalWager }) {
   const proof = {
     version: PROOF_VERSION,
     app: "Atom BitZ Keno Reactor",
@@ -259,7 +280,9 @@ async function buildRoundProof({ proofRound, playedCards, wager, draw, summaries
     drawCount: DRAW_COUNT,
     boardMax: 80,
     playedCards,
-    wager,
+    denomination: currentDenomination(),
+    cardCredits: normalizeCardCredits(state.cardCredits),
+    cardWagers: playedCards.map((cardIndex) => ({ cardIndex, wager: cardWager(cardIndex) })),
     totalWager,
     totalWin,
     cards: cardSelections.map((card) => [...card].sort((a, b) => a - b)),
@@ -343,14 +366,56 @@ function formatReceiptDate(value) {
   }
 }
 
-function getWager() {
-  const value = Math.floor(Number(wagerEl.value));
-  if (!Number.isFinite(value)) return 1;
-  return Math.max(1, Math.min(250, value));
-}
-
 function payoutMultiplier(picks, hitCount) {
   return PAYTABLES[picks]?.[hitCount] || 0;
+}
+
+function currentDenomination() {
+  return DENOMINATIONS.includes(state.denomination) ? state.denomination : DEFAULT_DENOMINATION;
+}
+
+function cardCreditCount(cardIndex) {
+  state.cardCredits = normalizeCardCredits(state.cardCredits);
+  return state.cardCredits[cardIndex] || 1;
+}
+
+function cardWager(cardIndex) {
+  return cardCreditCount(cardIndex) * currentDenomination();
+}
+
+function targetCardIndexesForBet() {
+  if (!viewAllCards) return [activeCardIndex];
+  const playable = playableCardIndexes();
+  return playable.length ? playable : [0, 1, 2, 3];
+}
+
+function addOneCredit() {
+  if (isDrawing) return;
+  state.cardCredits = normalizeCardCredits(state.cardCredits);
+  targetCardIndexesForBet().forEach((cardIndex) => {
+    state.cardCredits[cardIndex] = Math.min(MAX_CARD_CREDITS, state.cardCredits[cardIndex] + 1);
+  });
+  saveState();
+  render();
+}
+
+function setBetMax() {
+  if (isDrawing) return;
+  const targets = targetCardIndexesForBet();
+  const affordableCredits = Math.floor(state.credits / Math.max(1, currentDenomination() * targets.length));
+  const maxCredits = Math.max(1, Math.min(MAX_CARD_CREDITS, affordableCredits || 1));
+  targets.forEach((cardIndex) => {
+    state.cardCredits[cardIndex] = maxCredits;
+  });
+  saveState();
+  render();
+}
+
+function selectDenomination(value) {
+  if (isDrawing || !DENOMINATIONS.includes(value)) return;
+  state.denomination = value;
+  saveState();
+  render();
 }
 
 function activeSelection() {
@@ -367,6 +432,17 @@ function hitsForNumber(number) {
   return cardHits
     .map((hits, index) => (hits.has(number) ? index : null))
     .filter((index) => index !== null);
+}
+
+function visibleHitCardsForNumber(number) {
+  if (viewAllCards) return hitsForNumber(number);
+  return cardHits[activeCardIndex].has(number) ? [activeCardIndex] : [];
+}
+
+function hitClassForCards(hitCards) {
+  if (!hitCards.length) return "";
+  if (hitCards.length > 1) return " hit-multi";
+  return ` hit-card-${hitCards[0] + 1}`;
 }
 
 function playableCardIndexes() {
@@ -431,10 +507,14 @@ function renderBoard() {
     const activeSelected = !viewAllCards && activeSelection().has(number);
     const selectedCards = selectedCardsForNumber(number);
     const hitCards = hitsForNumber(number);
+    const visibleHitCards = visibleHitCardsForNumber(number);
+    button.classList.remove("hit-card-1", "hit-card-2", "hit-card-3", "hit-card-4", "hit-multi");
     button.classList.toggle("selected", activeSelected);
     button.classList.toggle("multi-selected", viewAllCards && selectedCards.length > 0);
     button.classList.toggle("drawn", drawn.has(number));
-    button.classList.toggle("hit", viewAllCards ? hitCards.length > 0 : cardHits[activeCardIndex].has(number));
+    button.classList.toggle("hit", visibleHitCards.length > 0);
+    visibleHitCards.forEach((cardIndex) => button.classList.add(`hit-card-${cardIndex + 1}`));
+    button.classList.toggle("hit-multi", visibleHitCards.length > 1);
     button.setAttribute("aria-pressed", activeSelected || selectedCards.length ? "true" : "false");
     button.dataset.cardCount = String(selectedCards.length);
     const markers = button.querySelector(".card-markers");
@@ -457,7 +537,7 @@ function renderPaytable(activeHit = null) {
     cardSelections.forEach((card, index) => {
       const row = document.createElement("div");
       row.className = "pay-row card-summary-row";
-      row.innerHTML = `<span>Card ${index + 1}</span><strong>${card.size}/10</strong>`;
+      row.innerHTML = `<span>Card ${CARD_LABELS[index]}</span><strong>${card.size}/10</strong>`;
       paytableEl.append(row);
     });
     return;
@@ -503,7 +583,7 @@ function renderStats() {
     activeCardLabelEl.textContent = "View All";
   } else {
     pickCountEl.textContent = `${activeSelection().size} selected`;
-    activeCardLabelEl.textContent = `Card ${activeCardIndex + 1}`;
+    activeCardLabelEl.textContent = `Card ${CARD_LABELS[activeCardIndex]} / ${cardCreditCount(activeCardIndex)} credit${cardCreditCount(activeCardIndex) === 1 ? "" : "s"}`;
   }
   roundsEl.textContent = formatCredits(state.rounds);
   bestHitEl.textContent = String(state.bestHit);
@@ -518,6 +598,23 @@ function renderStats() {
   missionTextEl.textContent = state.coreCharge >= 100
     ? "Core charged. Big hit mode engaged."
     : "Hit 3+ to charge the core";
+}
+
+function renderDenomination() {
+  if (denominationValueEl) {
+    denominationValueEl.textContent = formatCredits(currentDenomination());
+  }
+  denominationEls.forEach((button) => {
+    button.classList.toggle("active", Number(button.dataset.denomination) === currentDenomination());
+  });
+  if (!cardCreditSummaryEl) return;
+  if (viewAllCards) {
+    cardCreditSummaryEl.textContent = cardSelections
+      .map((_card, index) => `${CARD_LABELS[index]} ${cardCreditCount(index)}c/${formatCredits(cardWager(index))}`)
+      .join(" / ");
+  } else {
+    cardCreditSummaryEl.textContent = `Card ${CARD_LABELS[activeCardIndex]}: ${cardCreditCount(activeCardIndex)} credit${cardCreditCount(activeCardIndex) === 1 ? "" : "s"} / wager ${formatCredits(cardWager(activeCardIndex))}`;
+  }
 }
 
 function renderCheckout() {
@@ -549,11 +646,13 @@ function renderCheckout() {
 
 function render(activeHit = null) {
   const playable = playableCardIndexes();
-  const canFundRound = playable.length > 0 && Math.floor(state.credits / playable.length) >= 1;
+  const roundCost = playable.reduce((sum, cardIndex) => sum + cardWager(cardIndex), 0);
+  const canFundRound = playable.length > 0 && roundCost > 0 && state.credits >= roundCost;
   renderBoard();
   renderPaytable(activeHit);
   renderHistory();
   renderStats();
+  renderDenomination();
   renderCheckout();
   renderProof();
   playRoundBtn.disabled = isDrawing || !canFundRound;
@@ -566,8 +665,9 @@ function render(activeHit = null) {
 
 function renderDrawNumber(number) {
   const pill = document.createElement("span");
-  const hitCount = viewAllCards ? hitsForNumber(number).length : Number(cardHits[activeCardIndex].has(number));
-  pill.className = `draw-pill${hitCount ? " hit" : ""}`;
+  const hitCards = visibleHitCardsForNumber(number);
+  const hitCount = hitCards.length;
+  pill.className = `draw-pill${hitCount ? " hit" : ""}${hitClassForCards(hitCards)}`;
   pill.textContent = number;
   drawNumbersEl.append(pill);
   if (hitCount) {
@@ -583,7 +683,7 @@ function triggerLogoSmash() {
   stage.classList.add("smashing");
 }
 
-async function finishRound(wager, draw, playedCards, proofRound) {
+async function finishRound(draw, playedCards, proofRound) {
   let totalWin = 0;
   let bestRoundHit = 0;
   const summaries = playedCards.map((cardIndex) => {
@@ -592,13 +692,14 @@ async function finishRound(wager, draw, playedCards, proofRound) {
     cardHits[cardIndex] = hits;
     const hitCount = hits.size;
     const multiplier = payoutMultiplier(card.size, hitCount);
+    const wager = cardWager(cardIndex);
     const win = wager * multiplier;
     totalWin += win;
     bestRoundHit = Math.max(bestRoundHit, hitCount);
-    return { cardIndex, picks: card.size, hitCount, win };
+    return { cardIndex, picks: card.size, credits: cardCreditCount(cardIndex), denomination: currentDenomination(), wager, hitCount, win };
   });
 
-  const totalWager = wager * playedCards.length;
+  const totalWager = summaries.reduce((sum, item) => sum + item.wager, 0);
   state.credits = state.credits - totalWager + totalWin;
   state.peakCredits = Math.max(state.peakCredits, state.credits);
   state.rounds += 1;
@@ -615,7 +716,7 @@ async function finishRound(wager, draw, playedCards, proofRound) {
   drawSummaryEl.textContent = resultText;
 
   const summaryText = summaries
-    .map((item) => `C${item.cardIndex + 1} ${item.hitCount}/${item.picks}`)
+    .map((item) => `${CARD_LABELS[item.cardIndex]} ${item.hitCount}/${item.picks}`)
     .join(", ");
   state.history.unshift({
     text: `Round ${state.rounds}: ${summaryText}, wager ${formatCredits(totalWager)}, paid ${formatCredits(totalWin)}`,
@@ -631,7 +732,6 @@ async function finishRound(wager, draw, playedCards, proofRound) {
   state.lastProof = await buildRoundProof({
     proofRound,
     playedCards,
-    wager,
     draw,
     summaries,
     totalWin,
@@ -646,11 +746,8 @@ async function finishRound(wager, draw, playedCards, proofRound) {
 async function playRound() {
   const playedCards = playableCardIndexes();
   if (isDrawing || playedCards.length === 0) return;
-  const requestedWager = getWager();
-  const maxWager = Math.floor(state.credits / playedCards.length);
-  if (maxWager < 1) return;
-  const wager = Math.max(1, Math.min(requestedWager, maxWager));
-  wagerEl.value = wager;
+  const totalWager = playedCards.reduce((sum, cardIndex) => sum + cardWager(cardIndex), 0);
+  if (totalWager < 1 || totalWager > state.credits) return;
   isDrawing = true;
   drawn.clear();
   cardHits = cardSelections.map(() => new Set());
@@ -676,7 +773,7 @@ async function playRound() {
     index += 1;
     if (index >= draw.length) {
       window.clearInterval(timer);
-      finishRound(wager, draw, playedCards, proofRound);
+      finishRound(draw, playedCards, proofRound);
     }
   }, 65);
 }
@@ -695,6 +792,8 @@ function resetGame() {
   state.proofSeed = createLocalProofSeed();
   state.proofRound = 0;
   state.lastProof = null;
+  state.cardCredits = [1, 1, 1, 1];
+  state.denomination = DEFAULT_DENOMINATION;
   cardSelections = [new Set(), new Set(), new Set(), new Set()];
   state.cards = [[], [], [], []];
   drawn.clear();
@@ -702,7 +801,6 @@ function resetGame() {
   drawSummaryEl.textContent = "Awaiting draw";
   drawNumbersEl.innerHTML = "";
   lastResultEl.textContent = "Ready";
-  wagerEl.value = 10;
   saveState();
   render();
 }
@@ -740,7 +838,7 @@ function selectCardTab(tab) {
   }
   drawn.clear();
   cardHits = cardSelections.map(() => new Set());
-  drawSummaryEl.textContent = viewAllCards ? "All cards" : `Card ${activeCardIndex + 1}`;
+  drawSummaryEl.textContent = viewAllCards ? "All cards" : `Card ${CARD_LABELS[activeCardIndex]}`;
   drawNumbersEl.innerHTML = "";
   lastResultEl.textContent = "Ready";
   applyTheme(viewAllCards ? VIEW_ALL_THEME : CARD_THEMES[activeCardIndex]);
@@ -784,10 +882,8 @@ function completeFreeCheckout() {
   render();
 }
 
-document.querySelectorAll("[data-wager]").forEach((button) => {
-  button.addEventListener("click", () => {
-    wagerEl.value = button.dataset.wager;
-  });
+denominationEls.forEach((button) => {
+  button.addEventListener("click", () => selectDenomination(Number(button.dataset.denomination)));
 });
 
 cardTabEls.forEach((button) => {
@@ -805,13 +901,12 @@ donationChoiceEls.forEach((button) => {
 quickPickBtn.addEventListener("click", quickPick);
 clearPicksBtn.addEventListener("click", clearPicks);
 playRoundBtn.addEventListener("click", playRound);
+betOneBtn.addEventListener("click", addOneCredit);
+betMaxBtn.addEventListener("click", setBetMax);
 resetGameBtn.addEventListener("click", resetGame);
 checkoutCoinsBtn.addEventListener("click", completeFreeCheckout);
 copyProofBtn.addEventListener("click", copyProof);
 verifyProofBtn.addEventListener("click", verifyImportedProof);
-wagerEl.addEventListener("change", () => {
-  wagerEl.value = getWager();
-});
 
 window.themeMode = themeMode;
 applyTheme(CARD_THEMES[activeCardIndex]);

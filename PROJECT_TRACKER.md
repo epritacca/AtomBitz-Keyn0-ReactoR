@@ -35,6 +35,8 @@
 - Linked the Talent.app project tracker for `Atom Bitz Keno Reactor`.
 - Added Phase 1 verifiable simulation: browser-local deterministic proof seed, four-card replayable draws, session hash export, copy, and replay verification.
 - Installed Playwright test tooling and added a real browser test for the four-card proof export/replay flow.
+- Moved the card selector into the board header as `All / A / B / C / D`, moved Quick Pick/Clear/Draw into a lower play dock with Bet 1/Bet Max, and made hit colors match the card lane.
+- Replaced the freeform wager field with shared denominations `1 / 5 / 25 / 50 / 100`; Bet 1 and Bet Max now drive each card's independent 1-10 credit count.
 
 ## Next Practical Step
 

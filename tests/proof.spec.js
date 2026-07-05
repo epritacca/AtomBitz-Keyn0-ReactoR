@@ -18,6 +18,12 @@ test("four-card draw exports and verifies a replayable proof", async ({ page }) 
     }
   }
 
+  await page.locator('[data-denomination="25"]').click();
+  await page.locator('[data-card-tab="0"]').click();
+  await page.locator("#betOne").click();
+  await page.locator("#betOne").click();
+  await page.locator('[data-card-tab="1"]').click();
+  await page.locator("#betMax").click();
   await page.locator('[data-card-tab="all"]').click();
   await page.locator("#playRound").click();
 
@@ -28,6 +34,14 @@ test("four-card draw exports and verifies a replayable proof", async ({ page }) 
   const proof = JSON.parse(proofText);
   expect(proof.version).toBe("atom-bitz-keno-proof-v1");
   expect(proof.playedCards).toEqual([0, 1, 2, 3]);
+  expect(proof.denomination).toBe(25);
+  expect(proof.cardCredits).toEqual([3, 10, 1, 1]);
+  expect(proof.cardWagers).toEqual([
+    { cardIndex: 0, wager: 75 },
+    { cardIndex: 1, wager: 250 },
+    { cardIndex: 2, wager: 25 },
+    { cardIndex: 3, wager: 25 },
+  ]);
   expect(proof.draw).toHaveLength(20);
   expect(new Set(proof.draw).size).toBe(20);
   expect(proof.sessionHash).toMatch(/^[a-f0-9]{64}$/);
