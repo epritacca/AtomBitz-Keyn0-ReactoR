@@ -1,0 +1,28 @@
+{
+  "name": "atom-bitz-keno",
+  "version": "1.0.0",
+  "description": "Atom BitZ Keno Reactor is a free-play browser Keno prototype for the AtomBitz app lane.",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:proof": "playwright test tests/proof.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/epritacca/AtomBitz-Keyn0-ReactoR.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/epritacca/AtomBitz-Keyn0-ReactoR/issues"
+  },
+  "homepage": "https://github.com/epritacca/AtomBitz-Keyn0-ReactoR#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

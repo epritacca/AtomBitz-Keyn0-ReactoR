@@ -34,6 +34,7 @@
 - Chose the safe GitHub scope: publish the Keno app folder only, not the full `bonus.atombitz.us` workspace.
 - Linked the Talent.app project tracker for `Atom Bitz Keno Reactor`.
 - Added Phase 1 verifiable simulation: browser-local deterministic proof seed, four-card replayable draws, session hash export, copy, and replay verification.
+- Installed Playwright test tooling and added a real browser test for the four-card proof export/replay flow.
 
 ## Next Practical Step
 

@@ -29,6 +29,21 @@ Then open:
 http://127.0.0.1:5177/
 ```
 
+## Verify
+
+Install dev tooling and browser support:
+
+```powershell
+npm install
+npx playwright install chromium
+```
+
+Run the four-card proof test:
+
+```powershell
+npm run test:proof
+```
+
 ## Project Guardrails
 
 - Keep the app free-play unless a separate compliance and licensing plan approves a different model.
