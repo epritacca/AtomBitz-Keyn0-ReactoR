@@ -33,10 +33,11 @@
 - Added GitHub-ready repo basics: `.gitignore`, `README.md`, and `docs/github-talent-publishing-plan.md`.
 - Chose the safe GitHub scope: publish the Keno app folder only, not the full `bonus.atombitz.us` workspace.
 - Linked the Talent.app project tracker for `Atom Bitz Keno Reactor`.
+- Added Phase 1 verifiable simulation: browser-local deterministic proof seed, four-card replayable draws, session hash export, copy, and replay verification.
 
 ## Next Practical Step
 
-- Create/push a GitHub repo for this folder, then link it to Talent.app/Base builder surfaces as proof-of-build.
+- Publish the updated proof-enabled Keno app, then prototype a Base Sepolia VRF seed source for the same replay verifier.
 
 ## Guardrails
 

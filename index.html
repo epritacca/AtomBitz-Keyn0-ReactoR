@@ -147,6 +147,29 @@
           <div id="drawNumbers" class="draw-numbers"></div>
         </section>
 
+        <section class="panel-section proof-panel">
+          <div class="section-title">
+            <span class="label">Verifiable Session</span>
+            <strong id="proofStatus">No proof yet</strong>
+          </div>
+          <div class="proof-grid">
+            <div>
+              <span class="label">Seed</span>
+              <strong id="proofSeed">Pending</strong>
+            </div>
+            <div>
+              <span class="label">Hash</span>
+              <strong id="proofHash">Pending</strong>
+            </div>
+          </div>
+          <textarea id="proofExport" class="proof-export" rows="5" spellcheck="false" aria-label="Session proof export"></textarea>
+          <div class="proof-actions">
+            <button type="button" id="copyProof">Copy Proof</button>
+            <button type="button" id="verifyProof" class="primary">Verify Replay</button>
+          </div>
+          <textarea id="proofImport" class="proof-export" rows="3" spellcheck="false" aria-label="Proof import"></textarea>
+        </section>
+
         <section class="panel-section">
           <div class="section-title">
             <span class="label">Payout Map</span>

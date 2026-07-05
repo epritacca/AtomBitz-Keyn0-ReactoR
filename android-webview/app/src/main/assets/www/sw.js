@@ -1,4 +1,4 @@
-const CACHE_NAME = "atom-bitz-keno-reactor-v7";
+const CACHE_NAME = "atom-bitz-keno-reactor-v8";
 const ASSETS = [
   "./",
   "./index.html",

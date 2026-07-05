@@ -32,8 +32,16 @@ const cartTotalEl = document.getElementById("cartTotal");
 const receiptTitleEl = document.getElementById("receiptTitle");
 const receiptDetailEl = document.getElementById("receiptDetail");
 const donationChoiceEls = document.querySelectorAll("[data-donation]");
+const proofStatusEl = document.getElementById("proofStatus");
+const proofSeedEl = document.getElementById("proofSeed");
+const proofHashEl = document.getElementById("proofHash");
+const proofExportEl = document.getElementById("proofExport");
+const proofImportEl = document.getElementById("proofImport");
+const copyProofBtn = document.getElementById("copyProof");
+const verifyProofBtn = document.getElementById("verifyProof");
 
 const STORAGE_KEY = "atom-bitz-keno-reactor-v1";
+const PROOF_VERSION = "atom-bitz-keno-proof-v1";
 const STARTING_CREDITS = 2500;
 const MAX_PICKS = 10;
 const DRAW_COUNT = 20;
@@ -108,6 +116,9 @@ function loadState() {
         cards,
         history: Array.isArray(saved.history) ? saved.history.slice(0, 8) : [],
         receipts: Array.isArray(saved.receipts) ? saved.receipts.slice(0, 5) : [],
+        proofSeed: typeof saved.proofSeed === "string" && saved.proofSeed ? saved.proofSeed : createLocalProofSeed(),
+        proofRound: Math.max(0, Math.floor(saved.proofRound || 0)),
+        lastProof: saved.lastProof && typeof saved.lastProof === "object" ? saved.lastProof : null,
       };
     }
   } catch {
@@ -123,6 +134,9 @@ function loadState() {
     cards: [[], [], [], []],
     history: [],
     receipts: [],
+    proofSeed: createLocalProofSeed(),
+    proofRound: 0,
+    lastProof: null,
   };
 }
 
@@ -148,6 +162,150 @@ function applyTheme(nextTheme) {
 
 function isBoardNumber(value) {
   return Number.isInteger(value) && value >= 1 && value <= 80;
+}
+
+function createLocalProofSeed() {
+  const values = new Uint32Array(4);
+  if (window.crypto?.getRandomValues) {
+    window.crypto.getRandomValues(values);
+  } else {
+    values.forEach((_, index) => {
+      values[index] = Math.floor(Math.random() * 0xffffffff);
+    });
+  }
+  return Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("");
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function fallbackHash(text) {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    h1 = Math.imul(h1 ^ code, 2654435761);
+    h2 = Math.imul(h2 ^ code, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  const left = (h2 >>> 0).toString(16).padStart(8, "0");
+  const right = (h1 >>> 0).toString(16).padStart(8, "0");
+  return `${left}${right}${right}${left}`;
+}
+
+async function sha256Hex(text) {
+  if (!window.crypto?.subtle) {
+    return fallbackHash(text);
+  }
+  const encoded = new TextEncoder().encode(text);
+  const digest = await window.crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToBoardNumber(hex) {
+  return (Number.parseInt(hex.slice(0, 12), 16) % 80) + 1;
+}
+
+async function deterministicDraw(seed, proofRound, playedCards, cards) {
+  const draw = [];
+  const used = new Set();
+  let nonce = 0;
+  const pickSnapshot = cards.map((card) => [...card].sort((a, b) => a - b));
+  while (draw.length < DRAW_COUNT) {
+    const input = canonicalJson({
+      version: PROOF_VERSION,
+      seed,
+      proofRound,
+      playedCards,
+      pickSnapshot,
+      drawIndex: draw.length,
+      nonce,
+    });
+    const candidate = hexToBoardNumber(await sha256Hex(input));
+    if (!used.has(candidate)) {
+      used.add(candidate);
+      draw.push(candidate);
+    }
+    nonce += 1;
+  }
+  return draw.sort((a, b) => a - b);
+}
+
+function proofPayloadWithoutHash(proof) {
+  const { sessionHash: _sessionHash, ...payload } = proof;
+  return payload;
+}
+
+async function hashProof(proof) {
+  return sha256Hex(canonicalJson(proofPayloadWithoutHash(proof)));
+}
+
+async function buildRoundProof({ proofRound, playedCards, wager, draw, summaries, totalWin, totalWager }) {
+  const proof = {
+    version: PROOF_VERSION,
+    app: "Atom BitZ Keno Reactor",
+    chainPlan: "Base Sepolia VRF later; local deterministic seed now",
+    seedSource: "browser-local",
+    proofSeed: state.proofSeed,
+    proofRound,
+    drawCount: DRAW_COUNT,
+    boardMax: 80,
+    playedCards,
+    wager,
+    totalWager,
+    totalWin,
+    cards: cardSelections.map((card) => [...card].sort((a, b) => a - b)),
+    draw,
+    summaries,
+    createdAt: new Date().toISOString(),
+  };
+  proof.sessionHash = await hashProof(proof);
+  return proof;
+}
+
+function proofExportText(proof) {
+  return proof ? JSON.stringify(proof, null, 2) : "";
+}
+
+function shortHash(value) {
+  return value ? `${value.slice(0, 10)}...${value.slice(-8)}` : "Pending";
+}
+
+function renderProof() {
+  if (!proofSeedEl || !proofHashEl || !proofStatusEl || !proofExportEl || !proofImportEl) return;
+  proofSeedEl.textContent = shortHash(state.proofSeed);
+  const latestProof = state.lastProof;
+  proofHashEl.textContent = latestProof?.sessionHash ? shortHash(latestProof.sessionHash) : "Pending";
+  proofStatusEl.textContent = latestProof ? `Round ${latestProof.proofRound}` : "No proof yet";
+  proofExportEl.value = proofExportText(latestProof);
+  if (!proofImportEl.value && latestProof) {
+    proofImportEl.value = proofExportEl.value;
+  }
+}
+
+async function verifyProofText(text) {
+  const proof = JSON.parse(text);
+  if (!proof || proof.version !== PROOF_VERSION) {
+    throw new Error("Proof version mismatch");
+  }
+  const cards = proof.cards.map((card) => new Set(card.filter(isBoardNumber)));
+  const replayDraw = await deterministicDraw(proof.proofSeed, proof.proofRound, proof.playedCards, cards);
+  if (replayDraw.join(",") !== proof.draw.join(",")) {
+    throw new Error("Draw replay mismatch");
+  }
+  const replayHash = await hashProof(proof);
+  if (replayHash !== proof.sessionHash) {
+    throw new Error("Hash mismatch");
+  }
+  return proof;
 }
 
 function randomInt(max) {
@@ -397,10 +555,13 @@ function render(activeHit = null) {
   renderHistory();
   renderStats();
   renderCheckout();
+  renderProof();
   playRoundBtn.disabled = isDrawing || !canFundRound;
   quickPickBtn.disabled = isDrawing || viewAllCards;
   clearPicksBtn.disabled = isDrawing || viewAllCards;
   if (checkoutCoinsBtn) checkoutCoinsBtn.disabled = isDrawing;
+  if (copyProofBtn) copyProofBtn.disabled = isDrawing || !state.lastProof;
+  if (verifyProofBtn) verifyProofBtn.disabled = isDrawing;
 }
 
 function renderDrawNumber(number) {
@@ -422,7 +583,7 @@ function triggerLogoSmash() {
   stage.classList.add("smashing");
 }
 
-function finishRound(wager, draw, playedCards) {
+async function finishRound(wager, draw, playedCards, proofRound) {
   let totalWin = 0;
   let bestRoundHit = 0;
   const summaries = playedCards.map((cardIndex) => {
@@ -467,12 +628,22 @@ function finishRound(wager, draw, playedCards) {
     state.history.unshift({ text: "Refilled free-play AB App Coins back to 2,500.", win: 0 });
   }
 
+  state.lastProof = await buildRoundProof({
+    proofRound,
+    playedCards,
+    wager,
+    draw,
+    summaries,
+    totalWin,
+    totalWager,
+  });
+
   saveState();
   isDrawing = false;
   render(viewAllCards ? null : summaries[0].hitCount);
 }
 
-function playRound() {
+async function playRound() {
   const playedCards = playableCardIndexes();
   if (isDrawing || playedCards.length === 0) return;
   const requestedWager = getWager();
@@ -488,7 +659,9 @@ function playRound() {
   lastResultEl.textContent = "Spinning";
   render();
 
-  const draw = shuffledNumbers().slice(0, DRAW_COUNT).sort((a, b) => a - b);
+  const proofRound = state.proofRound + 1;
+  state.proofRound = proofRound;
+  const draw = await deterministicDraw(state.proofSeed, proofRound, playedCards, cardSelections);
   let index = 0;
   const timer = window.setInterval(() => {
     const number = draw[index];
@@ -503,7 +676,7 @@ function playRound() {
     index += 1;
     if (index >= draw.length) {
       window.clearInterval(timer);
-      finishRound(wager, draw, playedCards);
+      finishRound(wager, draw, playedCards, proofRound);
     }
   }, 65);
 }
@@ -519,6 +692,9 @@ function resetGame() {
   state.coreCharge = 0;
   state.history = [];
   state.receipts = [];
+  state.proofSeed = createLocalProofSeed();
+  state.proofRound = 0;
+  state.lastProof = null;
   cardSelections = [new Set(), new Set(), new Set(), new Set()];
   state.cards = [[], [], [], []];
   drawn.clear();
@@ -529,6 +705,31 @@ function resetGame() {
   wagerEl.value = 10;
   saveState();
   render();
+}
+
+async function copyProof() {
+  if (!state.lastProof || !proofExportEl) return;
+  const text = proofExportText(state.lastProof);
+  proofExportEl.value = text;
+  try {
+    await navigator.clipboard.writeText(text);
+    proofStatusEl.textContent = "Proof copied";
+  } catch {
+    proofExportEl.select();
+    proofStatusEl.textContent = "Proof selected";
+  }
+}
+
+async function verifyImportedProof() {
+  if (!proofImportEl || !proofStatusEl) return;
+  try {
+    const proof = await verifyProofText(proofImportEl.value || proofExportEl.value);
+    proofStatusEl.textContent = `Verified R${proof.proofRound}`;
+    proofHashEl.textContent = shortHash(proof.sessionHash);
+  } catch (error) {
+    proofStatusEl.textContent = "Verify failed";
+    proofHashEl.textContent = error.message;
+  }
 }
 
 function selectCardTab(tab) {
@@ -606,6 +807,8 @@ clearPicksBtn.addEventListener("click", clearPicks);
 playRoundBtn.addEventListener("click", playRound);
 resetGameBtn.addEventListener("click", resetGame);
 checkoutCoinsBtn.addEventListener("click", completeFreeCheckout);
+copyProofBtn.addEventListener("click", copyProof);
+verifyProofBtn.addEventListener("click", verifyImportedProof);
 wagerEl.addEventListener("change", () => {
   wagerEl.value = getWager();
 });

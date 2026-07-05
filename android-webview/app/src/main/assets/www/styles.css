@@ -726,6 +726,58 @@ button:disabled {
   color: var(--text);
 }
 
+.proof-panel {
+  border-color: color-mix(in srgb, var(--cyan) 44%, var(--line));
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.proof-grid div {
+  min-height: 58px;
+  border: 1px solid rgba(216, 231, 255, 0.12);
+  border-radius: 8px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.proof-grid strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--chrome);
+  font-size: 0.82rem;
+}
+
+.proof-export {
+  width: 100%;
+  min-height: 74px;
+  border: 1px solid rgba(216, 231, 255, 0.18);
+  border-radius: 8px;
+  padding: 9px;
+  resize: vertical;
+  background: rgba(5, 8, 14, 0.86);
+  color: var(--muted);
+  font: 0.76rem Consolas, "Courier New", monospace;
+}
+
+.proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.proof-actions button {
+  flex: 1 1 120px;
+}
+
 .brand-footer {
   min-height: 58px;
   display: flex;

@@ -8,6 +8,7 @@ It uses offchain AB App Coins as local demo points only. AB App Coins have no ca
 
 - Four independent Keno cards with one shared 80-number board.
 - View All mode that overlays each card's color marker on the board.
+- Browser-local verifiable session proofs with deterministic replay.
 - Pick 1-10 numbers per card, quick pick, clear, and draw flow.
 - Free 0.00 demo coin checkout flow.
 - Optional local support pledge workflow with no payment processing.
@@ -44,6 +45,7 @@ The near-term Base/Talent path is proof-of-build, not real-money gaming:
 - Publish this clean repo as public project evidence.
 - Host the free-play app on an AtomBitz-controlled URL.
 - Use GitHub commits, hosted demos, and app metadata as builder proof.
+- Add Base Sepolia VRF as the next randomness source after the local proof flow is stable.
 - Add wallet identity later only for sign-in, profile, or non-cash reputation features after review.
 
 ## Android WebView
