@@ -58,6 +58,12 @@ investment
 
 ## Talent.app Use
 
+Project tracker:
+
+```text
+https://talent.app/~/projects/45f7a2ac-c124-4a8d-9ea7-19eab4060439
+```
+
 Talent tracks builder reputation from signals such as shipped projects, GitHub activity, and Base/onchain activity. This repo should become one clean proof point for AtomBitz builder activity.
 
 Do not connect onchain or payment features to Keno until the free-play public version is stable and the compliance boundary is reviewed.

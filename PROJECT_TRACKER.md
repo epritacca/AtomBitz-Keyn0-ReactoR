@@ -4,6 +4,7 @@
 
 - Workspace: this repository folder
 - Project lane: AtomBitz free-play game prototype
+- Talent.app project: `https://talent.app/~/projects/45f7a2ac-c124-4a8d-9ea7-19eab4060439`
 - Public safety status: Free-play offchain AB App Coins only; no cash value, no wallet, no Coinbase connection, no wagering integration.
 - Prototype status: Local browser app created on 2026-07-04; branded/WebView-ready pass started.
 
@@ -31,6 +32,7 @@
 - Converted the top color strip into four Keno card tabs plus `View All`; each card stores its own picks, and View All overlays colored card markers on one shared board.
 - Added GitHub-ready repo basics: `.gitignore`, `README.md`, and `docs/github-talent-publishing-plan.md`.
 - Chose the safe GitHub scope: publish the Keno app folder only, not the full `bonus.atombitz.us` workspace.
+- Linked the Talent.app project tracker for `Atom Bitz Keno Reactor`.
 
 ## Next Practical Step
 

@@ -40,6 +40,7 @@ http://127.0.0.1:5177/
 
 The near-term Base/Talent path is proof-of-build, not real-money gaming:
 
+- Talent project: https://talent.app/~/projects/45f7a2ac-c124-4a8d-9ea7-19eab4060439
 - Publish this clean repo as public project evidence.
 - Host the free-play app on an AtomBitz-controlled URL.
 - Use GitHub commits, hosted demos, and app metadata as builder proof.
